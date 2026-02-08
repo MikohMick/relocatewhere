@@ -1,0 +1,36 @@
+/* RelocateWhere Admin Styles */
+
+.rw-admin {
+    max-width: 900px;
+}
+
+.rw-admin h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.rw-admin .description {
+    font-size: 14px;
+    color: #666;
+}
+
+.rw-admin code {
+    background: #f0f0f1;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+.rw-admin .form-table th {
+    width: 200px;
+    font-weight: 600;
+}
+
+.rw-admin .form-table .description {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.rw-admin table.wp-list-table {
+    margin-top: 16px;
+}
