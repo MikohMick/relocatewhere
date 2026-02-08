@@ -119,17 +119,23 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
             <div class="rw-accordion-body">
                 <p class="rw-field-hint">Monthly income in Kenya Shillings (KES)</p>
-                <select id="rw-income-range" class="rw-select">
-                    <option value="">Select your income range</option>
-                    <option value="0-30000">Under KES 30,000</option>
-                    <option value="30000-50000">KES 30,000 - 50,000</option>
-                    <option value="50000-80000">KES 50,000 - 80,000</option>
-                    <option value="80000-120000">KES 80,000 - 120,000</option>
-                    <option value="120000-200000">KES 120,000 - 200,000</option>
-                    <option value="200000-500000">KES 200,000 - 500,000</option>
-                    <option value="500000-1000000">KES 500,000+</option>
-                </select>
-                <button class="rw-btn rw-btn-next rw-btn-primary" data-next="4" disabled>See Results</button>
+                <div class="rw-range-slider-wrap">
+                    <div class="rw-range-display">
+                        <span id="rw-range-value">KES 20,000 &ndash; KES 80,000</span>
+                    </div>
+                    <div class="rw-dual-range">
+                        <div class="rw-range-track">
+                            <div class="rw-range-fill" id="rw-range-fill"></div>
+                        </div>
+                        <input type="range" id="rw-range-min" class="rw-range-input" min="5000" max="1000000" step="5000" value="20000" />
+                        <input type="range" id="rw-range-max" class="rw-range-input" min="5000" max="1000000" step="5000" value="80000" />
+                    </div>
+                    <div class="rw-range-labels">
+                        <span>KES 5,000</span>
+                        <span>KES 1,000,000</span>
+                    </div>
+                </div>
+                <button class="rw-btn rw-btn-next rw-btn-primary" data-next="4">See Results</button>
             </div>
         </div>
 
@@ -174,6 +180,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     <div id="rw-results-section" class="rw-results-section" style="display:none;">
 
         <div class="rw-results-header">
+            <button id="rw-go-back-btn" class="rw-btn rw-btn-back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Change search
+            </button>
             <h2>Cost of Living in <span id="rw-results-county"></span></h2>
             <div class="rw-results-meta">
                 <span class="rw-housing-info" id="rw-results-meta-text"></span>
@@ -206,6 +216,9 @@ if ( ! defined( 'ABSPATH' ) ) {
                     <p>Analyzing cost of living data...</p>
                 </div>
             </div>
+
+            <!-- Pagination -->
+            <div id="rw-pagination" class="rw-pagination" style="display:none;"></div>
 
             <!-- Map -->
             <div class="rw-map-wrap">

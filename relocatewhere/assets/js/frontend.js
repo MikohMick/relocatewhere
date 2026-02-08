@@ -12,6 +12,9 @@
         results: null,
         map: null,
         markers: [],
+        currentPage: 1,
+        perPage: 5,
+        allTowns: [],
     };
 
     // Cost category labels & icons
@@ -43,9 +46,10 @@
         initAccordion();
         initCountySearch();
         initHouseholdSelection();
-        initIncomeSelection();
+        initIncomeSlider();
         initEmailStep();
         initCurrencyToggle();
+        initGoBack();
         initContributorForm();
         checkContributorToken();
     });
@@ -229,20 +233,58 @@
     }
 
     // ========================================================================
-    // Step 3: Income
+    // Step 3: Income Range Slider
     // ========================================================================
 
-    function initIncomeSelection() {
-        var $select = $("#rw-income-range");
+    function initIncomeSlider() {
+        var $min = $("#rw-range-min");
+        var $max = $("#rw-range-max");
+        var $fill = $("#rw-range-fill");
+        var $display = $("#rw-range-value");
         var $nextBtn = $('.rw-step[data-step="3"] .rw-btn-next');
+        var sliderMin = 5000;
+        var sliderMax = 1000000;
 
-        $select.on("change", function () {
-            state.incomeRange = $(this).val();
-            $nextBtn.prop("disabled", !state.incomeRange);
-        });
+        function updateSlider() {
+            var minVal = parseInt($min.val(), 10);
+            var maxVal = parseInt($max.val(), 10);
+
+            // Prevent overlap.
+            if (minVal > maxVal - 5000) {
+                minVal = maxVal - 5000;
+                $min.val(minVal);
+            }
+            if (maxVal < minVal + 5000) {
+                maxVal = minVal + 5000;
+                $max.val(maxVal);
+            }
+
+            // Update fill bar position.
+            var leftPct = ((minVal - sliderMin) / (sliderMax - sliderMin)) * 100;
+            var rightPct = ((maxVal - sliderMin) / (sliderMax - sliderMin)) * 100;
+            $fill.css({
+                left: leftPct + "%",
+                width: (rightPct - leftPct) + "%",
+            });
+
+            // Update display text.
+            $display.html(
+                "KES " + numberWithCommas(minVal) + " &ndash; KES " + numberWithCommas(maxVal)
+            );
+
+            state.incomeRange = minVal + "-" + maxVal;
+        }
+
+        $min.on("input", updateSlider);
+        $max.on("input", updateSlider);
+
+        // Initialize.
+        updateSlider();
 
         $nextBtn.on("click", function () {
-            var text = $select.find("option:selected").text();
+            var minVal = parseInt($min.val(), 10);
+            var maxVal = parseInt($max.val(), 10);
+            var text = "KES " + numberWithCommas(minVal) + " - " + numberWithCommas(maxVal);
             completeStep(3, text);
             openStep(4);
 
@@ -296,6 +338,27 @@
         $("#rw-skip-btn").on("click", function () {
             completeStep(4, "Skipped email");
             loadResults();
+        });
+    }
+
+    // ========================================================================
+    // Go Back
+    // ========================================================================
+
+    function initGoBack() {
+        $("#rw-go-back-btn").on("click", function () {
+            // Hide results, show form.
+            $("#rw-results-section").hide();
+            $(".rw-form-section").show();
+
+            // Reopen step 1 as active, keep all steps completed so user can click any.
+            openStep(1);
+
+            // Scroll to top of form.
+            $("html, body").animate(
+                { scrollTop: $(".rw-form-section").offset().top - 20 },
+                400
+            );
         });
     }
 
@@ -389,20 +452,107 @@
             return (a.costs ? a.costs.total : 0) - (b.costs ? b.costs.total : 0);
         });
 
-        $.each(towns, function (i, town) {
-            $list.append(buildTownCard(town, i));
+        // Store all towns for pagination.
+        state.allTowns = towns;
+        state.currentPage = 1;
+
+        renderPage();
+
+        // Add all markers to map (not paginated).
+        addMapMarkers(towns, data.county);
+    }
+
+    function renderPage() {
+        var towns = state.allTowns;
+        var totalPages = Math.ceil(towns.length / state.perPage);
+        var start = (state.currentPage - 1) * state.perPage;
+        var end = Math.min(start + state.perPage, towns.length);
+        var pageTowns = towns.slice(start, end);
+
+        var $list = $("#rw-results-list");
+        $list.empty();
+
+        $.each(pageTowns, function (i, town) {
+            $list.append(buildTownCard(town, start + i));
         });
 
-        // Add markers to map.
-        addMapMarkers(towns, data.county);
-
         // Bind show more toggles.
-        $(".rw-show-more-btn").on("click", function () {
+        $list.find(".rw-show-more-btn").on("click", function () {
             var $card = $(this).closest(".rw-town-card");
             $card.toggleClass("expanded");
             $(this).text(
                 $card.hasClass("expanded") ? "Show less" : "Show more"
             );
+        });
+
+        // Render pagination.
+        renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+        var $pag = $("#rw-pagination");
+
+        if (totalPages <= 1) {
+            $pag.hide();
+            return;
+        }
+
+        var html = "";
+
+        // Prev button.
+        html += '<button class="rw-page-btn rw-page-prev"' +
+            (state.currentPage <= 1 ? ' disabled' : '') +
+            '>&laquo; Prev</button>';
+
+        for (var p = 1; p <= totalPages; p++) {
+            html += '<button class="rw-page-btn' +
+                (p === state.currentPage ? ' active' : '') +
+                '" data-page="' + p + '">' + p + '</button>';
+        }
+
+        // Next button.
+        html += '<button class="rw-page-btn rw-page-next"' +
+            (state.currentPage >= totalPages ? ' disabled' : '') +
+            '>Next &raquo;</button>';
+
+        html += '<span class="rw-page-info">Showing ' +
+            ((state.currentPage - 1) * state.perPage + 1) + '-' +
+            Math.min(state.currentPage * state.perPage, state.allTowns.length) +
+            ' of ' + state.allTowns.length + ' towns</span>';
+
+        $pag.html(html).show();
+
+        // Bind pagination clicks.
+        $pag.find(".rw-page-btn[data-page]").on("click", function () {
+            state.currentPage = parseInt($(this).data("page"), 10);
+            renderPage();
+            $("html, body").animate(
+                { scrollTop: $("#rw-results-list").offset().top - 20 },
+                300
+            );
+        });
+
+        $pag.find(".rw-page-prev").on("click", function () {
+            if (state.currentPage > 1) {
+                state.currentPage--;
+                renderPage();
+                $("html, body").animate(
+                    { scrollTop: $("#rw-results-list").offset().top - 20 },
+                    300
+                );
+            }
+        });
+
+        $pag.find(".rw-page-next").on("click", function () {
+            var totalPages = Math.ceil(state.allTowns.length / state.perPage);
+            if (state.currentPage < totalPages) {
+                state.currentPage++;
+                renderPage();
+                $("html, body").animate(
+                    { scrollTop: $("#rw-results-list").offset().top - 20 },
+                    300
+                );
+            }
         });
     }
 
@@ -467,8 +617,20 @@
         var humanPct =
             town.human_source_pct !== undefined ? town.human_source_pct : 0;
 
+        var sourceTitle = "";
+        if (aiPct === 100) {
+            sourceTitle = "Results 100% AI generated";
+        } else if (humanPct > 0) {
+            sourceTitle = "Results from AI + human sources";
+        }
+
         var sourceHtml =
             '<div class="rw-source-info">' +
+            '<div class="rw-source-title">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+            escapeHtml(sourceTitle) +
+            "</div>" +
+            '<div class="rw-source-bar-wrap">' +
             '<div class="rw-source-bar">' +
             '<div class="rw-source-ai" style="width:' +
             aiPct +
@@ -486,6 +648,7 @@
                   humanPct +
                   "% Human</span>"
                 : "") +
+            "</div>" +
             "</div>" +
             "</div>";
 
