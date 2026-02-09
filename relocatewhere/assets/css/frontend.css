@@ -874,6 +874,12 @@
     flex-shrink: 0;
 }
 
+.rw-source-disclaimer {
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
 .rw-source-links {
     display: flex;
     flex-direction: column;

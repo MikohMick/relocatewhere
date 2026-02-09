@@ -38,7 +38,7 @@ class RW_Shortcode {
         wp_enqueue_script( 'rw-frontend' );
 
         $default_currency = get_option( 'rw_default_currency', 'KES' );
-        $disclaimer       = get_option( 'rw_disclaimer_text', 'Our data is generated from AI sources. We are still in development and will soon have confirmed human sources.' );
+        $disclaimer       = get_option( 'rw_disclaimer_text', 'These cost-of-living estimates are generated using AI and publicly available data sources. They are approximate and intended as a general guide only — actual costs may vary based on specific location, lifestyle, and market conditions. We recommend verifying with local sources, real estate agents, or recent residents before making relocation decisions. RelocateWhere is not a financial advisor.' );
         $privacy_page_id  = get_option( 'rw_privacy_page_id', 0 );
         $privacy_url      = $privacy_page_id ? get_permalink( $privacy_page_id ) : '#';
         $donate_link      = get_option( 'rw_donate_link', '' );

@@ -577,33 +577,24 @@
                 "</div>";
         });
 
-        // Source links.
-        var sources = town.sources || [];
-        var sourceHtml = "";
+        // Curated reference sources.
+        var linkIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
 
-        if (sources.length > 0) {
-            sourceHtml = '<div class="rw-source-info">' +
-                '<div class="rw-source-title">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
-                "Sources &amp; References" +
-                "</div>" +
-                '<div class="rw-source-links">';
-            $.each(sources, function (j, src) {
-                if (src.url && src.title) {
-                    sourceHtml += '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener noreferrer" class="rw-source-link">' +
-                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-                        escapeHtml(src.title) +
-                        "</a>";
-                }
-            });
-            sourceHtml += "</div></div>";
-        } else {
-            sourceHtml = '<div class="rw-source-info">' +
-                '<div class="rw-source-title">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-                "AI-generated estimates &mdash; verify with local sources" +
-                "</div></div>";
-        }
+        var sourceHtml =
+            '<div class="rw-source-info">' +
+            '<div class="rw-source-title">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
+            "Our Data Sources" +
+            "</div>" +
+            '<div class="rw-source-disclaimer">Estimates calibrated using data from these references:</div>' +
+            '<div class="rw-source-links">' +
+            '<a href="https://www.numbeo.com/cost-of-living/country_result.jsp?country=Kenya" target="_blank" rel="noopener noreferrer" class="rw-source-link">' + linkIcon + "Numbeo &mdash; Cost of Living in Kenya</a>" +
+            '<a href="https://www.buyrentkenya.com" target="_blank" rel="noopener noreferrer" class="rw-source-link">' + linkIcon + "BuyRentKenya &mdash; Property Listings</a>" +
+            '<a href="https://www.knbs.or.ke" target="_blank" rel="noopener noreferrer" class="rw-source-link">' + linkIcon + "KNBS &mdash; Kenya National Bureau of Statistics</a>" +
+            '<a href="https://www.expatistan.com/cost-of-living/country/kenya" target="_blank" rel="noopener noreferrer" class="rw-source-link">' + linkIcon + "Expatistan &mdash; Cost of Living Comparison</a>" +
+            '<a href="https://livingcost.org/cost/kenya" target="_blank" rel="noopener noreferrer" class="rw-source-link">' + linkIcon + "LivingCost.org &mdash; Kenya Living Costs</a>" +
+            "</div>" +
+            "</div>";
 
         var html =
             '<div class="rw-town-card" data-index="' +
