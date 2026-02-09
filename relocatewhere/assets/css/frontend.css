@@ -376,16 +376,20 @@
 }
 
 .rw-btn-link {
-    background: none;
-    color: #6b7280;
-    padding: 8px 0;
-    font-weight: 500;
+    background: #fff;
+    color: #374151;
+    padding: 12px 24px;
+    font-weight: 600;
     width: 100%;
-    margin-top: 4px;
+    margin-top: 16px;
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
 }
 
 .rw-btn-link:hover {
-    color: #3b82f6;
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
 }
 
 .rw-btn-donate {
@@ -736,6 +740,12 @@
     text-align: right;
     flex-shrink: 0;
     white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    min-width: 140px;
+    padding-left: 12px;
 }
 
 .rw-affordability-badge {
@@ -744,7 +754,6 @@
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    margin-bottom: 6px;
 }
 
 .rw-badge-comfortable {
@@ -762,23 +771,36 @@
     color: #991b1b;
 }
 
+.rw-cost-amount-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
 .rw-total-cost {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: #1a1a2e;
     margin: 0;
+    line-height: 1.2;
+}
+
+.rw-total-cost-period {
+    font-size: 13px;
+    font-weight: 400;
+    color: #6b7280;
 }
 
 .rw-total-cost-usd {
     font-size: 13px;
-    color: #3b82f6;
-    margin: 2px 0 0;
+    color: #9ca3af;
+    margin: 0;
 }
 
 .rw-income-pct {
     font-size: 12px;
     color: #6b7280;
-    margin-top: 4px;
 }
 
 /* Town Expanded Details */
@@ -824,15 +846,15 @@
     color: #1a1a2e;
 }
 
-/* Source Indicator */
+/* Source Links */
 .rw-source-info {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding: 12px 14px;
-    background: #f0f4ff;
+    background: #f8fafc;
     border-radius: 8px;
-    border: 1px solid #dbeafe;
+    border: 1px solid #e2e8f0;
     font-size: 13px;
     margin-bottom: 12px;
 }
@@ -840,81 +862,44 @@
 .rw-source-title {
     font-size: 12px;
     font-weight: 600;
-    color: #4b5563;
+    color: #64748b;
     display: flex;
     align-items: center;
     gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 }
 
 .rw-source-title svg {
     flex-shrink: 0;
 }
 
-.rw-source-bar-wrap {
+.rw-source-links {
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rw-source-link {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
+    color: #3b82f6;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 4px 0;
+    transition: color 0.15s;
 }
 
-.rw-source-bar {
-    flex: 1;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 4px;
-    overflow: hidden;
-    display: flex;
+.rw-source-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
 }
 
-.rw-source-ai {
-    background: linear-gradient(90deg, #3b82f6, #6366f1);
-    transition: width 0.3s;
-}
-
-.rw-source-human {
-    background: linear-gradient(90deg, #10b981, #34d399);
-    transition: width 0.3s;
-}
-
-.rw-source-labels {
-    display: flex;
-    gap: 12px;
-    font-size: 12px;
-    color: #6b7280;
+.rw-source-link svg {
     flex-shrink: 0;
-}
-
-.rw-source-label-ai {
-    color: #4f46e5;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.rw-source-label-ai::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #6366f1;
-    display: inline-block;
-}
-
-.rw-source-label-human {
-    color: #059669;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.rw-source-label-human::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #10b981;
-    display: inline-block;
+    opacity: 0.6;
 }
 
 /* Go Back Button */
@@ -1226,16 +1211,19 @@
 
     .rw-town-card-header {
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
     }
 
     .rw-town-cost {
+        align-items: flex-start;
         text-align: left;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        white-space: normal;
+        min-width: 0;
+        padding-left: 0;
+        width: 100%;
+    }
+
+    .rw-cost-amount-row {
+        justify-content: flex-start;
     }
 
     .rw-affordability-legend {

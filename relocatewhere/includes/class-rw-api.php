@@ -53,6 +53,7 @@ For each town, provide the following monthly cost estimates in KES:
 9. description - A brief 1-2 sentence description of the town's character
 10. safety - Rate as: Very Safe, Safe, Moderate, or Exercise Caution
 11. tags - 2-3 relevant tags like: affordable, urban, suburban, rural, historic, growing, family-friendly, vibrant
+12. sources - An array of 2-3 real, publicly accessible URLs that were used or are relevant as references for the cost-of-living data in this town. These should be real websites about Kenya cost of living, housing, or local information (e.g. from numbeo.com, expatistan.com, livingcost.org, property listing sites like buyrentkenya.com, or local news sites). Include a short title for each source.
 
 Also calculate what percentage of the given income range (use the midpoint) the total cost represents, and flag it as:
 - comfortable (under 60%)
@@ -78,7 +79,11 @@ Return ONLY valid JSON in this exact format with no additional text:
         \"health\": 2000,
         \"other\": 1500,
         \"total\": 35500
-      }
+      },
+      \"sources\": [
+        {\"title\": \"Numbeo Cost of Living\", \"url\": \"https://www.numbeo.com/cost-of-living/in/Nairobi\"},
+        {\"title\": \"BuyRentKenya Listings\", \"url\": \"https://www.buyrentkenya.com/houses-for-rent\"}
+      ]
     }
   ]
 }";

@@ -577,45 +577,33 @@
                 "</div>";
         });
 
-        // Source bar.
-        var aiPct = town.ai_source_pct !== undefined ? town.ai_source_pct : 100;
-        var humanPct =
-            town.human_source_pct !== undefined ? town.human_source_pct : 0;
+        // Source links.
+        var sources = town.sources || [];
+        var sourceHtml = "";
 
-        var sourceTitle = "";
-        if (aiPct === 100) {
-            sourceTitle = "Results 100% AI generated";
-        } else if (humanPct > 0) {
-            sourceTitle = "Results from AI + human sources";
+        if (sources.length > 0) {
+            sourceHtml = '<div class="rw-source-info">' +
+                '<div class="rw-source-title">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
+                "Sources &amp; References" +
+                "</div>" +
+                '<div class="rw-source-links">';
+            $.each(sources, function (j, src) {
+                if (src.url && src.title) {
+                    sourceHtml += '<a href="' + escapeHtml(src.url) + '" target="_blank" rel="noopener noreferrer" class="rw-source-link">' +
+                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+                        escapeHtml(src.title) +
+                        "</a>";
+                }
+            });
+            sourceHtml += "</div></div>";
+        } else {
+            sourceHtml = '<div class="rw-source-info">' +
+                '<div class="rw-source-title">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+                "AI-generated estimates &mdash; verify with local sources" +
+                "</div></div>";
         }
-
-        var sourceHtml =
-            '<div class="rw-source-info">' +
-            '<div class="rw-source-title">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-            escapeHtml(sourceTitle) +
-            "</div>" +
-            '<div class="rw-source-bar-wrap">' +
-            '<div class="rw-source-bar">' +
-            '<div class="rw-source-ai" style="width:' +
-            aiPct +
-            '%"></div>' +
-            '<div class="rw-source-human" style="width:' +
-            humanPct +
-            '%"></div>' +
-            "</div>" +
-            '<div class="rw-source-labels">' +
-            '<span class="rw-source-label-ai">' +
-            aiPct +
-            "% AI</span>" +
-            (humanPct > 0
-                ? '<span class="rw-source-label-human">' +
-                  humanPct +
-                  "% Human</span>"
-                : "") +
-            "</div>" +
-            "</div>" +
-            "</div>";
 
         var html =
             '<div class="rw-town-card" data-index="' +
@@ -639,16 +627,19 @@
             '">' +
             escapeHtml(town.income_pct || 0) +
             "% of income</span>" +
-            '<p class="rw-total-cost" data-kes="' +
+            '<div class="rw-cost-amount-row">' +
+            '<span class="rw-total-cost" data-kes="' +
             total +
             '">' +
             formatCurrency(total) +
-            '<span style="font-size:13px;font-weight:400;color:#6b7280"> /mo</span></p>' +
-            '<p class="rw-total-cost-usd" data-kes="' +
+            "</span>" +
+            '<span class="rw-total-cost-period">/mo</span>' +
+            '<span class="rw-total-cost-usd" data-kes="' +
             total +
             '">~' +
             formatCurrencyAlt(total) +
-            "</p>" +
+            "</span>" +
+            "</div>" +
             "</div>" +
             "</div>" +
             '<div class="rw-town-details">' +
@@ -786,10 +777,7 @@
     function updateAllCurrencyValues() {
         $(".rw-total-cost[data-kes]").each(function () {
             var kes = parseInt($(this).data("kes"), 10);
-            $(this).html(
-                formatCurrency(kes) +
-                    '<span style="font-size:13px;font-weight:400;color:#6b7280"> /mo</span>'
-            );
+            $(this).text(formatCurrency(kes));
         });
 
         $(".rw-total-cost-usd[data-kes]").each(function () {
