@@ -46,7 +46,7 @@
         initAccordion();
         initCountySearch();
         initHouseholdSelection();
-        initIncomeSlider();
+        initIncomeSelection();
         initEmailStep();
         initCurrencyToggle();
         initGoBack();
@@ -233,58 +233,23 @@
     }
 
     // ========================================================================
-    // Step 3: Income Range Slider
+    // Step 3: Income Selection (Radio Grid)
     // ========================================================================
 
-    function initIncomeSlider() {
-        var $min = $("#rw-range-min");
-        var $max = $("#rw-range-max");
-        var $fill = $("#rw-range-fill");
-        var $display = $("#rw-range-value");
+    function initIncomeSelection() {
         var $nextBtn = $('.rw-step[data-step="3"] .rw-btn-next');
-        var sliderMin = 5000;
-        var sliderMax = 1000000;
 
-        function updateSlider() {
-            var minVal = parseInt($min.val(), 10);
-            var maxVal = parseInt($max.val(), 10);
-
-            // Prevent overlap.
-            if (minVal > maxVal - 5000) {
-                minVal = maxVal - 5000;
-                $min.val(minVal);
-            }
-            if (maxVal < minVal + 5000) {
-                maxVal = minVal + 5000;
-                $max.val(maxVal);
-            }
-
-            // Update fill bar position.
-            var leftPct = ((minVal - sliderMin) / (sliderMax - sliderMin)) * 100;
-            var rightPct = ((maxVal - sliderMin) / (sliderMax - sliderMin)) * 100;
-            $fill.css({
-                left: leftPct + "%",
-                width: (rightPct - leftPct) + "%",
-            });
-
-            // Update display text.
-            $display.html(
-                "KES " + numberWithCommas(minVal) + " &ndash; KES " + numberWithCommas(maxVal)
-            );
-
-            state.incomeRange = minVal + "-" + maxVal;
-        }
-
-        $min.on("input", updateSlider);
-        $max.on("input", updateSlider);
-
-        // Initialize.
-        updateSlider();
+        $(".rw-income-option").on("click", function () {
+            $(".rw-income-option").removeClass("selected");
+            $(this).addClass("selected");
+            $(this).find("input[type=radio]").prop("checked", true);
+            state.incomeRange = $(this).find("input[type=radio]").val();
+            $nextBtn.prop("disabled", false);
+        });
 
         $nextBtn.on("click", function () {
-            var minVal = parseInt($min.val(), 10);
-            var maxVal = parseInt($max.val(), 10);
-            var text = "KES " + numberWithCommas(minVal) + " - " + numberWithCommas(maxVal);
+            var $selected = $(".rw-income-option.selected");
+            var text = $selected.find(".rw-income-sub").text() || state.incomeRange;
             completeStep(3, text);
             openStep(4);
 

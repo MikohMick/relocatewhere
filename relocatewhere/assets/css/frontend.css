@@ -172,102 +172,63 @@
     margin: 0 0 8px;
 }
 
-/* Dual Range Slider */
-.rw-range-slider-wrap {
+/* Income Radio Grid */
+.rw-income-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     margin-bottom: 16px;
 }
 
-.rw-range-display {
+.rw-income-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
     text-align: center;
-    margin-bottom: 12px;
+    background: #fff;
+    transition: all 0.15s;
 }
 
-.rw-range-display span {
-    font-size: 18px;
+.rw-income-option:hover {
+    border-color: #93c5fd;
+    background: #f0f7ff;
+}
+
+.rw-income-option.selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.rw-income-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rw-income-label {
+    font-size: 15px;
     font-weight: 700;
     color: #1a1a2e;
+    line-height: 1.2;
 }
 
-.rw-dual-range {
-    position: relative;
-    height: 40px;
+.rw-income-option.selected .rw-income-label {
+    color: #3b82f6;
 }
 
-.rw-range-track {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 6px;
-    background: #e5e7eb;
-    border-radius: 3px;
-    transform: translateY(-50%);
-    pointer-events: none;
-}
-
-.rw-range-fill {
-    position: absolute;
-    height: 100%;
-    background: #3b82f6;
-    border-radius: 3px;
-}
-
-.rw-range-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    pointer-events: none;
-    outline: none;
-}
-
-.rw-range-input::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #3b82f6;
-    border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    pointer-events: all;
-    position: relative;
-    z-index: 2;
-}
-
-.rw-range-input::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #3b82f6;
-    border: 3px solid #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    pointer-events: all;
-    position: relative;
-    z-index: 2;
-}
-
-.rw-range-input::-webkit-slider-thumb:hover {
-    background: #2563eb;
-}
-
-.rw-range-input::-moz-range-thumb:hover {
-    background: #2563eb;
-}
-
-.rw-range-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
+.rw-income-sub {
+    font-size: 11px;
     color: #9ca3af;
     margin-top: 2px;
+}
+
+.rw-income-option.selected .rw-income-sub {
+    color: #60a5fa;
 }
 
 /* County Dropdown */
@@ -624,16 +585,21 @@
     align-items: flex-start;
 }
 
-.rw-results-list {
+.rw-results-col {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+}
+
+.rw-results-list {
+    width: 100%;
 }
 
 .rw-map-wrap {
-    width: 50%;
+    width: 480px;
+    flex-shrink: 0;
     position: sticky;
     top: 20px;
-    flex-shrink: 0;
 }
 
 .rw-map {
@@ -691,11 +657,13 @@
     align-items: flex-start;
     padding: 16px 20px;
     gap: 16px;
+    flex-wrap: nowrap;
 }
 
 .rw-town-info {
     flex: 1;
     min-width: 0;
+    overflow: hidden;
 }
 
 .rw-town-name {
@@ -703,6 +671,8 @@
     font-weight: 700;
     margin: 0 0 4px;
     color: #1a1a2e;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .rw-town-desc {
@@ -765,6 +735,7 @@
 .rw-town-cost {
     text-align: right;
     flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .rw-affordability-badge {
@@ -1215,6 +1186,20 @@
         font-size: 12px;
     }
 
+    .rw-income-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rw-income-option {
+        flex-direction: row;
+        gap: 8px;
+        padding: 10px 14px;
+    }
+
+    .rw-income-sub {
+        margin-top: 0;
+    }
+
     .rw-email-row {
         flex-direction: column;
     }
@@ -1227,7 +1212,7 @@
         display: none;
     }
 
-    .rw-results-list {
+    .rw-results-col {
         width: 100%;
     }
 
@@ -1250,6 +1235,7 @@
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
+        white-space: normal;
     }
 
     .rw-affordability-legend {

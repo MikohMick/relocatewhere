@@ -119,23 +119,44 @@ if ( ! defined( 'ABSPATH' ) ) {
             </div>
             <div class="rw-accordion-body">
                 <p class="rw-field-hint">Monthly income in Kenya Shillings (KES)</p>
-                <div class="rw-range-slider-wrap">
-                    <div class="rw-range-display">
-                        <span id="rw-range-value">KES 20,000 &ndash; KES 80,000</span>
-                    </div>
-                    <div class="rw-dual-range">
-                        <div class="rw-range-track">
-                            <div class="rw-range-fill" id="rw-range-fill"></div>
-                        </div>
-                        <input type="range" id="rw-range-min" class="rw-range-input" min="5000" max="1000000" step="5000" value="20000" />
-                        <input type="range" id="rw-range-max" class="rw-range-input" min="5000" max="1000000" step="5000" value="80000" />
-                    </div>
-                    <div class="rw-range-labels">
-                        <span>KES 5,000</span>
-                        <span>KES 1,000,000</span>
-                    </div>
+                <div class="rw-income-grid">
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="0-30000" />
+                        <span class="rw-income-label">Under 30K</span>
+                        <span class="rw-income-sub">KES 0 - 30,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="30000-50000" />
+                        <span class="rw-income-label">30K - 50K</span>
+                        <span class="rw-income-sub">KES 30,000 - 50,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="50000-80000" />
+                        <span class="rw-income-label">50K - 80K</span>
+                        <span class="rw-income-sub">KES 50,000 - 80,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="80000-120000" />
+                        <span class="rw-income-label">80K - 120K</span>
+                        <span class="rw-income-sub">KES 80,000 - 120,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="120000-200000" />
+                        <span class="rw-income-label">120K - 200K</span>
+                        <span class="rw-income-sub">KES 120,000 - 200,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="200000-500000" />
+                        <span class="rw-income-label">200K - 500K</span>
+                        <span class="rw-income-sub">KES 200,000 - 500,000</span>
+                    </label>
+                    <label class="rw-income-option">
+                        <input type="radio" name="rw_income" value="500000-1000000" />
+                        <span class="rw-income-label">500K+</span>
+                        <span class="rw-income-sub">KES 500,000+</span>
+                    </label>
                 </div>
-                <button class="rw-btn rw-btn-next rw-btn-primary" data-next="4">See Results</button>
+                <button class="rw-btn rw-btn-next rw-btn-primary" data-next="4" disabled>See Results</button>
             </div>
         </div>
 
@@ -209,16 +230,16 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
 
         <div class="rw-results-layout">
-            <!-- Town List -->
-            <div class="rw-results-list" id="rw-results-list">
-                <div class="rw-loading" id="rw-loading">
-                    <div class="rw-spinner"></div>
-                    <p>Analyzing cost of living data...</p>
+            <!-- Town List + Pagination -->
+            <div class="rw-results-col">
+                <div class="rw-results-list" id="rw-results-list">
+                    <div class="rw-loading" id="rw-loading">
+                        <div class="rw-spinner"></div>
+                        <p>Analyzing cost of living data...</p>
+                    </div>
                 </div>
+                <div id="rw-pagination" class="rw-pagination" style="display:none;"></div>
             </div>
-
-            <!-- Pagination -->
-            <div id="rw-pagination" class="rw-pagination" style="display:none;"></div>
 
             <!-- Map -->
             <div class="rw-map-wrap">
