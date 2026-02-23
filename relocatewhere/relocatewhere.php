@@ -1,10 +1,10 @@
 <?php
 /**
- * Plugin Name: RelocateWhere
- * Plugin URI: https://relocatewhere.com
- * Description: Help users discover the best places to relocate within Kenya based on cost of living data.
- * Version: 1.0.0
- * Author: RelocateWhere
+ * Plugin Name: myjobmap
+ * Plugin URI: https://myjobmap.co.ke
+ * Description: Browse jobs across Kenya's 47 counties on an interactive map, powered by myjobmag.co.ke.
+ * Version: 2.0.0
+ * Author: myjobmap
  * License: GPL v2 or later
  * Text Domain: relocatewhere
  */
@@ -13,24 +13,22 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'RW_VERSION', '1.0.0' );
+define( 'RW_VERSION', '2.0.0' );
 define( 'RW_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RW_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RW_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 // Include files.
-require_once RW_PLUGIN_DIR . 'includes/class-rw-db.php';
+require_once RW_PLUGIN_DIR . 'includes/class-rw-counties.php';
+require_once RW_PLUGIN_DIR . 'includes/class-rw-scraper.php';
 require_once RW_PLUGIN_DIR . 'includes/class-rw-admin.php';
-require_once RW_PLUGIN_DIR . 'includes/class-rw-api.php';
 require_once RW_PLUGIN_DIR . 'includes/class-rw-ajax.php';
 require_once RW_PLUGIN_DIR . 'includes/class-rw-shortcode.php';
-require_once RW_PLUGIN_DIR . 'includes/class-rw-counties.php';
 
 /**
- * Activation hook - create database tables.
+ * Activation hook.
  */
 function rw_activate() {
-    RW_DB::create_tables();
     flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'rw_activate' );
