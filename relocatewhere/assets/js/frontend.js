@@ -424,6 +424,14 @@
             ? '<span class="rw-job-date">' + escapeHtml(job.date) + "</span>"
             : "";
 
+        var sourceHtml = job.source_name
+            ? '<a class="rw-job-source" href="' + escapeHtml(job.source_url || "#") +
+              '" target="_blank" rel="noopener noreferrer">' +
+              'via ' + escapeHtml(job.source_name) +
+              '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+              "</a>"
+            : "";
+
         return (
             '<div class="rw-job-card">' +
                 '<div class="rw-job-main">' +
@@ -434,6 +442,8 @@
                         "</a>" +
                         '<div class="rw-job-meta">' +
                             companyHtml + locationHtml + dateHtml +
+                            (dateHtml && sourceHtml ? '<span class="rw-job-sep">&middot;</span>' : "") +
+                            sourceHtml +
                         "</div>" +
                     "</div>" +
                     '<a class="rw-apply-btn" href="' + escapeHtml(job.url) +

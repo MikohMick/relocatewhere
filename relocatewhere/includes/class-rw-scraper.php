@@ -172,11 +172,13 @@ class RW_Scraper {
             $date        = self::extract_date( $parent_text );
 
             $jobs[] = array(
-                'title'    => $title,
-                'company'  => $company,
-                'location' => $location ?: 'Kenya',
-                'url'      => $href,
-                'date'     => $date,
+                'title'       => $title,
+                'company'     => $company,
+                'location'    => $location ?: 'Kenya',
+                'url'         => $href,
+                'date'        => $date,
+                'source_name' => 'MyJobMag',
+                'source_url'  => 'https://www.myjobmag.co.ke',
             );
         }
 
