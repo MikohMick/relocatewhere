@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RW_Scraper {
 
-    const WIDGET_URL      = 'https://www.myjobmag.co.ke/widget/feed.php';
+    const WIDGET_URL     = 'https://www.myjobmag.co.ke/widget/feed.php';
     const CACHE_DURATION  = 1800; // 30 minutes
 
     /**

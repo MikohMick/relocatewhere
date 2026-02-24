@@ -1,36 +1,38 @@
 (function ($) {
     "use strict";
 
+    var DISCLAIMER_KEY = "rw_disclaimer_accepted";
+
     // ========================================================================
     // State
     // ========================================================================
 
     var state = {
-        countyKey:     "",
-        countyName:    "",
-        industry:      "",
-        allJobs:       [],     // all jobs from last fetch
-        filteredJobs:  [],     // after client-side industry filter
-        currentPage:   1,
-        perPage:       10,
-        map:           null,
-        countyMarkers: {},     // countyKey -> L.circleMarker
-        selectedCounty: null,
+        countyKey:      "",
+        countyName:     "",
+        industry:       "",
+        allJobs:        [],    // all jobs from last fetch
+        filteredJobs:   [],    // after client-side industry filter
+        currentPage:    1,
+        perPage:        10,
+        map:            null,
+        countyMarkers:  {},    // countyKey -> L.circleMarker
+        isSearching:    false,
     };
 
     var industries = {
-        "Technology":    ["tech", "ict", "software", "developer", "developer", "it ", "digital", "data", "systems", "network", "cyber", "programmer", "web ", "mobile"],
-        "Finance":       ["finance", "bank", "account", "audit", "treasury", "invest", "insurance", "actuari", "loan", "credit", "financial"],
-        "Health":        ["health", "medical", "nurse", "doctor", "clinical", "pharmacy", "lab", "radiolog", "dentist", "physioth", "nutritio", "hospital"],
-        "Education":     ["teach", "tutor", "school", "lecturer", "education", "academic", "training", "curriculum", "principal", "headteach"],
-        "NGO":           ["ngo", "non-profit", "nonprofit", "humanitarian", "development", "community", "foundation", "charity", "social work", "volunteer"],
-        "Engineering":   ["engineer", "civil", "mechanical", "electrical", "structural", "construction", "project manager", "site manager", "quantity survey", "architect"],
-        "Sales":         ["sales", "marketing", "business development", "brand", "customer", "retail", "commercial", "revenue", "distribution", "client"],
-        "Administration":["admin", "secretary", "receptionist", "office", "clerk", "pa ", "executive assistant", "operations", "facilities", "procurement"],
-        "Agriculture":   ["agri", "farm", "livestock", "crop", "horticulture", "vet", "soil", "irrigation", "food production", "dairy"],
-        "Hospitality":   ["hotel", "hospitality", "chef", "cook", "waiter", "tourism", "travel", "lodge", "resort", "catering", "housekeep"],
-        "Media":         ["media", "journalist", "reporter", "editor", "broadcast", "radio", "tv ", "television", "content", "public relat", "communications", "writer"],
-        "Legal":         ["legal", "lawyer", "advocate", "compliance", "paralegal", "court", "litigation", "contract"],
+        "Technology":     ["tech", "ict", "software", "developer", "it ", "digital", "data", "systems", "network", "cyber", "programmer", "web ", "mobile"],
+        "Finance":        ["finance", "bank", "account", "audit", "treasury", "invest", "insurance", "actuari", "loan", "credit", "financial"],
+        "Health":         ["health", "medical", "nurse", "doctor", "clinical", "pharmacy", "lab", "radiolog", "dentist", "physioth", "nutritio", "hospital"],
+        "Education":      ["teach", "tutor", "school", "lecturer", "education", "academic", "training", "curriculum", "principal", "headteach"],
+        "NGO":            ["ngo", "non-profit", "nonprofit", "humanitarian", "development", "community", "foundation", "charity", "social work", "volunteer"],
+        "Engineering":    ["engineer", "civil", "mechanical", "electrical", "structural", "construction", "project manager", "site manager", "quantity survey", "architect"],
+        "Sales":          ["sales", "marketing", "business development", "brand", "customer", "retail", "commercial", "revenue", "distribution", "client"],
+        "Administration": ["admin", "secretary", "receptionist", "office", "clerk", "pa ", "executive assistant", "operations", "facilities", "procurement"],
+        "Agriculture":    ["agri", "farm", "livestock", "crop", "horticulture", "vet", "soil", "irrigation", "food production", "dairy"],
+        "Hospitality":    ["hotel", "hospitality", "chef", "cook", "waiter", "tourism", "travel", "lodge", "resort", "catering", "housekeep"],
+        "Media":          ["media", "journalist", "reporter", "editor", "broadcast", "radio", "tv ", "television", "content", "public relat", "communications", "writer"],
+        "Legal":          ["legal", "lawyer", "advocate", "compliance", "paralegal", "court", "litigation", "contract"],
     };
 
     // ========================================================================
@@ -43,16 +45,47 @@
         initIndustryFilter();
         initSearchBtn();
         initClearBtn();
-        // Auto-load on page render.
-        loadJobs();
+        initDisclaimer();
     });
+
+    // ========================================================================
+    // Disclaimer Modal
+    // ========================================================================
+
+    function initDisclaimer() {
+        var accepted = false;
+        try {
+            accepted = localStorage.getItem(DISCLAIMER_KEY) === "1";
+        } catch (e) {
+            // localStorage blocked (private browsing, etc.) — treat as accepted.
+            accepted = true;
+        }
+
+        if (accepted) {
+            // Already seen before — go straight to loading jobs.
+            loadJobs(false);
+        } else {
+            // Show modal, block until user accepts.
+            $("#rw-disclaimer-overlay").fadeIn(200);
+
+            $("#rw-disclaimer-accept").on("click", function () {
+                try {
+                    localStorage.setItem(DISCLAIMER_KEY, "1");
+                } catch (e) {}
+
+                $("#rw-disclaimer-overlay").fadeOut(180, function () {
+                    // Kick off initial load after modal closes.
+                    loadJobs(false);
+                });
+            });
+        }
+    }
 
     // ========================================================================
     // Map
     // ========================================================================
 
     function initMap() {
-        // Centre on Kenya, zoom to show the whole country.
         state.map = L.map("rw-map", { zoomControl: true }).setView([-0.5, 37.5], 6);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -89,22 +122,17 @@
     }
 
     function highlightMarker(countyKey) {
-        // Reset all markers.
         $.each(state.countyMarkers, function (key, marker) {
             marker.setStyle({ fillColor: "#3b82f6", radius: 8 });
         });
-
         if (countyKey && state.countyMarkers[countyKey]) {
-            state.countyMarkers[countyKey].setStyle({
-                fillColor: "#f59e0b",
-                radius:    12,
-            });
+            state.countyMarkers[countyKey].setStyle({ fillColor: "#f59e0b", radius: 12 });
             state.countyMarkers[countyKey].bringToFront();
         }
     }
 
     // ========================================================================
-    // County Search
+    // County Search (client-side, no AJAX needed)
     // ========================================================================
 
     function initCountySearch() {
@@ -138,9 +166,7 @@
                 $items.removeClass("highlighted").eq(idx).addClass("highlighted");
             } else if (e.key === "Enter") {
                 e.preventDefault();
-                if ($highlighted.length) {
-                    $highlighted.trigger("click");
-                }
+                if ($highlighted.length) $highlighted.trigger("click");
             } else if (e.key === "Escape") {
                 $dropdown.hide();
             }
@@ -164,15 +190,17 @@
             }
         });
 
+        var html = '<div class="rw-dropdown-item" data-key="" data-name="">All Kenya</div>';
+
         if (matches.length === 0) {
             $dropdown.html('<div class="rw-dropdown-item" style="color:#9ca3af;">No counties found</div>').show();
             return;
         }
 
-        // Prepend "All Kenya" option.
-        var html = '<div class="rw-dropdown-item" data-key="" data-name="">All Kenya</div>';
         $.each(matches.slice(0, 20), function (i, county) {
-            html += '<div class="rw-dropdown-item" data-key="' + escapeHtml(county.key) + '" data-name="' + escapeHtml(county.name) + '">' + escapeHtml(county.name) + ' County</div>';
+            html += '<div class="rw-dropdown-item" data-key="' + escapeHtml(county.key) +
+                    '" data-name="' + escapeHtml(county.name) + '">' +
+                    escapeHtml(county.name) + " County</div>";
         });
 
         $dropdown.html(html).show();
@@ -206,27 +234,23 @@
             state.filteredJobs = state.allJobs.slice();
             return;
         }
-
         var keywords = industries[state.industry] || [state.industry.toLowerCase()];
-
         state.filteredJobs = state.allJobs.filter(function (job) {
             var haystack = (job.title + " " + job.company).toLowerCase();
             for (var i = 0; i < keywords.length; i++) {
-                if (haystack.indexOf(keywords[i]) !== -1) {
-                    return true;
-                }
+                if (haystack.indexOf(keywords[i]) !== -1) return true;
             }
             return false;
         });
     }
 
     // ========================================================================
-    // Search & Clear
+    // Search & Clear buttons
     // ========================================================================
 
     function initSearchBtn() {
         $("#rw-search-btn").on("click", function () {
-            loadJobs();
+            loadJobs(true); // true = scroll to results after load
         });
     }
 
@@ -240,7 +264,7 @@
             $("#rw-industry-select").val("");
             $("#rw-clear-btn").hide();
             highlightMarker(null);
-            loadJobs();
+            loadJobs(false);
         });
     }
 
@@ -250,14 +274,40 @@
         $("#rw-county-input").val(name + " County");
         $("#rw-county-key").val(key);
         highlightMarker(key);
-        loadJobs();
+        loadJobs(true); // scroll to results when county clicked on map
+    }
+
+    // ========================================================================
+    // Search button loading state
+    // ========================================================================
+
+    function setSearchBtnLoading(loading) {
+        var $btn = $("#rw-search-btn");
+        if (loading) {
+            $btn.prop("disabled", true).addClass("rw-btn-loading");
+            $("#rw-search-icon").hide();
+            $("#rw-search-spinner").show();
+            $("#rw-search-label").text("Searching\u2026");
+        } else {
+            $btn.prop("disabled", false).removeClass("rw-btn-loading");
+            $("#rw-search-icon").show();
+            $("#rw-search-spinner").hide();
+            $("#rw-search-label").text("Search");
+        }
     }
 
     // ========================================================================
     // Load Jobs (AJAX)
     // ========================================================================
 
-    function loadJobs() {
+    /**
+     * @param {boolean} scrollToResults  Whether to smooth-scroll to the list after load.
+     */
+    function loadJobs(scrollToResults) {
+        if (state.isSearching) return;
+        state.isSearching = true;
+
+        setSearchBtnLoading(true);
         showLoading(true);
         hideEmpty();
 
@@ -267,29 +317,41 @@
         }
 
         $.ajax({
-            url:    rwData.ajaxUrl,
-            method: "POST",
-            data:   {
+            url:     rwData.ajaxUrl,
+            method:  "POST",
+            data:    {
                 action: "rw_get_jobs",
                 nonce:  rwData.nonce,
                 county: state.countyKey,
             },
             success: function (response) {
+                state.isSearching = false;
+                setSearchBtnLoading(false);
                 showLoading(false);
 
                 if (response.success) {
                     state.allJobs     = response.data.jobs || [];
                     state.currentPage = 1;
                     applyIndustryFilter();
-                    updateResultsMeta(response.data.location, response.data.count);
+                    updateResultsMeta(response.data.location, state.filteredJobs.length);
                     renderJobs();
+
+                    if (scrollToResults) {
+                        scrollToList();
+                    }
                 } else {
-                    showEmpty(response.data ? response.data.message : "Failed to load jobs.");
+                    showEmpty(
+                        response.data ? response.data.message : "Failed to load jobs. Please try again."
+                    );
+                    if (scrollToResults) scrollToList();
                 }
             },
             error: function () {
+                state.isSearching = false;
+                setSearchBtnLoading(false);
                 showLoading(false);
-                showEmpty("Network error. Please try again.");
+                showEmpty("Network error. Please check your connection and try again.");
+                if (scrollToResults) scrollToList();
             },
         });
     }
@@ -298,29 +360,35 @@
     // Render Jobs
     // ========================================================================
 
-    function updateResultsMeta(location, total) {
-        var shown    = state.filteredJobs.length;
-        var industry = state.industry ? " in <strong>" + escapeHtml(state.industry) + "</strong>" : "";
-        var loc      = location ? " for <strong>" + escapeHtml(location) + "</strong>" : " across <strong>All Kenya</strong>";
+    function updateResultsMeta(location, count) {
+        var industry = state.industry
+            ? " in <strong>" + escapeHtml(state.industry) + "</strong>"
+            : "";
+        var loc = location
+            ? " &mdash; <strong>" + escapeHtml(location) + "</strong>"
+            : " &mdash; <strong>All Kenya</strong>";
 
-        $("#rw-results-meta").html(
-            '<span class="rw-job-count">' + shown + ' job' + (shown !== 1 ? 's' : '') + '</span>' + industry + loc
-        ).show();
+        $("#rw-results-meta")
+            .html(
+                '<span class="rw-job-count">' + count + "</span> job" +
+                (count !== 1 ? "s" : "") + industry + loc
+            )
+            .show();
     }
 
     function renderJobs() {
         var jobs  = state.filteredJobs;
         var $list = $("#rw-results-list");
 
-        // Remove existing cards (keep #rw-loading and #rw-empty).
         $list.find(".rw-job-card").remove();
 
         if (jobs.length === 0) {
-            showEmpty(
-                state.industry
-                    ? "No " + state.industry + " jobs found" + (state.countyName ? " in " + state.countyName : "") + ". Try a different filter."
-                    : "No jobs found. Try a different county."
-            );
+            var msg = state.industry
+                ? "No " + state.industry + " jobs found" +
+                  (state.countyName ? " in " + state.countyName : "") +
+                  ". Try a different filter."
+                : "No jobs found. Try a different county.";
+            showEmpty(msg);
             $("#rw-pagination").hide();
             updateResultsMeta(state.countyName || "All Kenya", 0);
             return;
@@ -341,36 +409,40 @@
 
     function buildJobCard(job) {
         var companyHtml = job.company
-            ? '<span class="rw-job-company">' + escapeHtml(job.company) + '</span><span class="rw-job-sep">&middot;</span>'
-            : "";
-
-        var dateHtml = job.date
-            ? '<span class="rw-job-date">' + escapeHtml(job.date) + '</span>'
+            ? '<span class="rw-job-company">' + escapeHtml(job.company) + "</span>" +
+              '<span class="rw-job-sep">&middot;</span>'
             : "";
 
         var locationHtml = job.location
-            ? '<span class="rw-job-location"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' + escapeHtml(job.location) + '</span>'
+            ? '<span class="rw-job-location">' +
+              '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+              escapeHtml(job.location) + "</span>" +
+              '<span class="rw-job-sep">&middot;</span>'
+            : "";
+
+        var dateHtml = job.date
+            ? '<span class="rw-job-date">' + escapeHtml(job.date) + "</span>"
             : "";
 
         return (
             '<div class="rw-job-card">' +
                 '<div class="rw-job-main">' +
                     '<div class="rw-job-info">' +
-                        '<a class="rw-job-title" href="' + escapeHtml(job.url) + '" target="_blank" rel="noopener noreferrer">' +
+                        '<a class="rw-job-title" href="' + escapeHtml(job.url) +
+                            '" target="_blank" rel="noopener noreferrer">' +
                             escapeHtml(job.title) +
-                        '</a>' +
+                        "</a>" +
                         '<div class="rw-job-meta">' +
-                            companyHtml +
-                            locationHtml +
-                            '<span class="rw-job-sep">&middot;</span>' +
-                            dateHtml +
-                        '</div>' +
-                    '</div>' +
-                    '<a class="rw-apply-btn" href="' + escapeHtml(job.url) + '" target="_blank" rel="noopener noreferrer">' +
-                        'Apply <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>' +
-                    '</a>' +
-                '</div>' +
-            '</div>'
+                            companyHtml + locationHtml + dateHtml +
+                        "</div>" +
+                    "</div>" +
+                    '<a class="rw-apply-btn" href="' + escapeHtml(job.url) +
+                        '" target="_blank" rel="noopener noreferrer">' +
+                        "Apply " +
+                        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>' +
+                    "</a>" +
+                "</div>" +
+            "</div>"
         );
     }
 
@@ -386,12 +458,12 @@
             return;
         }
 
-        var html = "";
+        var html    = "";
+        var start   = Math.max(1, state.currentPage - 2);
+        var end     = Math.min(totalPages, state.currentPage + 2);
 
-        html += '<button class="rw-page-btn rw-page-prev"' + (state.currentPage <= 1 ? " disabled" : "") + ">&laquo; Prev</button>";
-
-        var start = Math.max(1, state.currentPage - 2);
-        var end   = Math.min(totalPages, state.currentPage + 2);
+        html += '<button class="rw-page-btn rw-page-prev"' +
+                (state.currentPage <= 1 ? " disabled" : "") + ">&laquo; Prev</button>";
 
         if (start > 1) {
             html += '<button class="rw-page-btn" data-page="1">1</button>';
@@ -399,7 +471,8 @@
         }
 
         for (var p = start; p <= end; p++) {
-            html += '<button class="rw-page-btn' + (p === state.currentPage ? " active" : "") + '" data-page="' + p + '">' + p + "</button>";
+            html += '<button class="rw-page-btn' + (p === state.currentPage ? " active" : "") +
+                    '" data-page="' + p + '">' + p + "</button>";
         }
 
         if (end < totalPages) {
@@ -407,12 +480,13 @@
             html += '<button class="rw-page-btn" data-page="' + totalPages + '">' + totalPages + "</button>";
         }
 
-        html += '<button class="rw-page-btn rw-page-next"' + (state.currentPage >= totalPages ? " disabled" : "") + ">Next &raquo;</button>";
+        html += '<button class="rw-page-btn rw-page-next"' +
+                (state.currentPage >= totalPages ? " disabled" : "") + ">Next &raquo;</button>";
 
         html += '<span class="rw-page-info">Showing ' +
-            ((state.currentPage - 1) * state.perPage + 1) + "–" +
-            Math.min(state.currentPage * state.perPage, totalJobs) +
-            " of " + totalJobs + " jobs</span>";
+                ((state.currentPage - 1) * state.perPage + 1) + "&ndash;" +
+                Math.min(state.currentPage * state.perPage, totalJobs) +
+                " of " + totalJobs + " jobs</span>";
 
         $pag.html(html).show();
 
@@ -440,9 +514,9 @@
     }
 
     function scrollToList() {
-        var $list = $("#rw-results-list");
-        if ($list.length) {
-            $("html, body").animate({ scrollTop: $list.offset().top - 20 }, 300);
+        var $target = $("#rw-results-list");
+        if ($target.length) {
+            $("html, body").animate({ scrollTop: $target.offset().top - 24 }, 420, "swing");
         }
     }
 
