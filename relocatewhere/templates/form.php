@@ -102,10 +102,8 @@ $donate_link  = get_option( 'rw_donate_link', '' );
                 <!-- Empty / error state -->
                 <div id="rw-empty" class="rw-empty" style="display:none;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <p id="rw-empty-msg">No jobs found. Try a different county or industry.</p>
-                    <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer" class="rw-btn rw-btn-outline">
-                        Browse all jobs on myjobmag &rarr;
-                    </a>
+                    <p id="rw-empty-msg">No jobs found.</p>
+                    <div id="rw-empty-action"></div>
                 </div>
 
                 <!-- Jobs rendered by JS -->

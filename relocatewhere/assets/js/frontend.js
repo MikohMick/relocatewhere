@@ -383,12 +383,14 @@
         $list.find(".rw-job-card").remove();
 
         if (jobs.length === 0) {
-            var msg = state.industry
-                ? "No " + state.industry + " jobs found" +
-                  (state.countyName ? " in " + state.countyName : "") +
-                  ". Try a different filter."
-                : "No jobs found. Try a different county.";
-            showEmpty(msg);
+            if (state.industry) {
+                // Industry filter active but no matches — offer to reset to all jobs.
+                var industry  = state.industry;
+                var inCounty  = state.countyName ? " in " + state.countyName : "";
+                showEmpty("No " + industry + " jobs found" + inCounty + ".", true);
+            } else {
+                showEmpty("No jobs found. Try selecting a different county.");
+            }
             $("#rw-pagination").hide();
             updateResultsMeta(state.countyName || "All Kenya", 0);
             return;
@@ -549,8 +551,28 @@
         $("#rw-empty").hide();
     }
 
-    function showEmpty(msg) {
+    /**
+     * @param {string}  msg          Message text.
+     * @param {boolean} showResetBtn When true, show a "Show all jobs" button that clears the industry filter.
+     */
+    function showEmpty(msg, showResetBtn) {
         $("#rw-empty-msg").text(msg || "No jobs found.");
+
+        if (showResetBtn) {
+            var locationLabel = state.countyName || "All Kenya";
+            var $btn = $('<button class="rw-btn rw-btn-outline">Show all jobs in ' + escapeHtml(locationLabel) + "</button>");
+            $btn.on("click", function () {
+                state.industry    = "";
+                state.currentPage = 1;
+                $("#rw-industry-select").val("");
+                applyIndustryFilter();
+                renderJobs();
+            });
+            $("#rw-empty-action").empty().append($btn);
+        } else {
+            $("#rw-empty-action").empty();
+        }
+
         $("#rw-empty").show();
         $("#rw-pagination").hide();
     }
