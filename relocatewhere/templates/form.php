@@ -11,6 +11,48 @@ $adsense_code = get_option( 'rw_adsense_code', '' );
 $donate_link  = get_option( 'rw_donate_link', '' );
 ?>
 
+<!-- =====================================================================
+     Disclaimer Modal (shown once; accepted state stored in localStorage)
+     ===================================================================== -->
+<div id="rw-disclaimer-overlay" class="rw-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rw-modal-title" style="display:none;">
+    <div class="rw-modal">
+
+        <div class="rw-modal-header">
+            <div class="rw-modal-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <h3 id="rw-modal-title">Before You Browse</h3>
+            <p class="rw-modal-lead">myjobmap aggregates publicly available job listings from myjobmag.co.ke to help you explore opportunities across Kenya's 47 counties.</p>
+        </div>
+
+        <div class="rw-modal-body">
+            <p><strong>Please be aware:</strong></p>
+            <ul class="rw-modal-list">
+                <li>Listings are sourced from third parties and are <strong>not posted, screened, or verified</strong> by myjobmap.</li>
+                <li>Job details — titles, requirements, salaries, and company information — <strong>may be outdated</strong> or differ from the actual position by the time you view them.</li>
+                <li>We strongly encourage you to <strong>research any employer independently</strong> before submitting an application or sharing personal information.</li>
+                <li>myjobmap is a <strong>discovery tool only</strong>. We have no affiliation with any listed employer and are not involved in the hiring process.</li>
+            </ul>
+            <p class="rw-modal-legal">
+                By continuing, you acknowledge that myjobmap accepts no responsibility for job mismatches, inaccurate listings, or any outcome arising from your job search activity. Always apply your own judgement.
+            </p>
+        </div>
+
+        <div class="rw-modal-footer">
+            <button id="rw-disclaimer-accept" class="rw-btn rw-btn-primary rw-btn-block">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Got It &mdash; Show Me Jobs
+            </button>
+            <p class="rw-modal-link">
+                Rather go straight to the source?
+                <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer">Visit myjobmag.co.ke &rarr;</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+
+
 <div id="rw-app" class="rw-container">
 
     <!-- Header -->
@@ -57,8 +99,9 @@ $donate_link  = get_option( 'rw_donate_link', '' );
 
         <div class="rw-filter-actions">
             <button id="rw-search-btn" class="rw-btn rw-btn-primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                Search
+                <svg id="rw-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <svg id="rw-search-spinner" class="rw-btn-spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:none;"><circle cx="12" cy="12" r="10" stroke-dasharray="60" stroke-dashoffset="40"/></svg>
+                <span id="rw-search-label">Search</span>
             </button>
             <button id="rw-clear-btn" class="rw-btn rw-btn-ghost" style="display:none;">
                 Clear
@@ -77,7 +120,7 @@ $donate_link  = get_option( 'rw_donate_link', '' );
                 <!-- Loading state -->
                 <div id="rw-loading" class="rw-loading" style="display:none;">
                     <div class="rw-spinner"></div>
-                    <p>Loading jobs&hellip;</p>
+                    <p>Searching for jobs&hellip;</p>
                 </div>
 
                 <!-- Empty / error state -->

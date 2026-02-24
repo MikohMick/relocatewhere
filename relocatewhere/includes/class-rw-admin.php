@@ -107,6 +107,83 @@ class RW_Admin {
                 <?php wp_nonce_field( 'rw_clear_cache' ); ?>
                 <?php submit_button( 'Clear Job Cache', 'secondary' ); ?>
             </form>
+
+            <hr />
+
+            <h2>Scraper Connection Test</h2>
+            <p>Verify that the server can reach the myjobmag.co.ke widget feed and parse job listings. Run this after first install or if the job list shows empty.</p>
+            <button id="rw-test-scraper" class="button button-secondary">&#9654; Run Connection Test</button>
+            <div id="rw-test-result" style="margin-top:14px;max-width:720px;font-family:monospace;font-size:13px;"></div>
+
+            <script>
+            (function($){
+                var nonce = '<?php echo esc_js( wp_create_nonce( 'rw_nonce' ) ); ?>';
+
+                $('#rw-test-scraper').on('click', function(){
+                    var $btn = $(this);
+                    var $out = $('#rw-test-result');
+
+                    $btn.prop('disabled', true).text('Testing\u2026');
+                    $out.html('<p style="color:#6b7280;">Connecting to myjobmag.co.ke &mdash; this may take up to 15 seconds&hellip;</p>');
+
+                    $.ajax({
+                        url:    ajaxurl,
+                        method: 'POST',
+                        data:   { action: 'rw_debug_scraper', nonce: nonce },
+                        timeout: 20000,
+                        success: function(r){
+                            $btn.prop('disabled', false).text('\u25B6 Run Connection Test');
+
+                            if (!r.success) {
+                                $out.html(
+                                    '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:14px;color:#991b1b;">' +
+                                    '<strong>Error:</strong> ' + (r.data ? escHtml(r.data.message) : 'Unknown error') + '</div>'
+                                );
+                                return;
+                            }
+
+                            var d   = r.data;
+                            var ok  = d.http_status === 200;
+                            var bg  = ok ? '#f0fdf4' : '#fef2f2';
+                            var bc  = ok ? '#86efac' : '#fca5a5';
+                            var clr = ok ? '#166534' : '#991b1b';
+                            var status = ok ? '&#9989; ' : '&#10060; ';
+
+                            var html = '<div style="background:' + bg + ';border:1px solid ' + bc + ';border-radius:8px;padding:16px;color:' + clr + ';">';
+                            html += '<p style="margin:0 0 10px;font-size:14px;font-weight:600;">' + status + 'HTTP ' + d.http_status + (d.http_error ? ' &mdash; ' + escHtml(d.http_error) : '') + '</p>';
+                            html += '<table style="border-collapse:collapse;width:100%;color:#374151;">';
+                            html += row('Widget URL', '<a href="' + escHtml(d.widget_url) + '" target="_blank" style="color:#3b82f6;word-break:break-all;">' + escHtml(d.widget_url) + '</a>');
+                            html += row('Response body', d.body_length + ' bytes received');
+                            html += row('Jobs parsed', '<strong style="font-size:16px;color:' + (d.parsed_jobs_count > 0 ? '#166534' : '#991b1b') + ';">' + d.parsed_jobs_count + '</strong>');
+                            if (d.scrape_error) html += row('Scraper error', '<span style="color:#991b1b;">' + escHtml(d.scrape_error) + '</span>');
+                            if (d.first_job) html += row('First job', escHtml(d.first_job.title) + (d.first_job.company ? ' &mdash; ' + escHtml(d.first_job.company) : '') + '<br><a href="' + escHtml(d.first_job.url) + '" target="_blank" style="color:#3b82f6;">' + escHtml(d.first_job.url) + '</a>');
+                            html += '</table>';
+
+                            if (d.body_preview) {
+                                html += '<details style="margin-top:12px;"><summary style="cursor:pointer;font-weight:600;color:#6b7280;">Raw body preview (first 600 chars)</summary>';
+                                html += '<pre style="margin:8px 0 0;white-space:pre-wrap;word-break:break-all;font-size:12px;color:#374151;background:#fff;padding:10px;border-radius:6px;border:1px solid #e5e7eb;">' + escHtml(d.body_preview) + '</pre></details>';
+                            }
+
+                            html += '</div>';
+                            $out.html(html);
+                        },
+                        error: function(){
+                            $btn.prop('disabled', false).text('\u25B6 Run Connection Test');
+                            $out.html('<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:14px;color:#991b1b;">Network error or timeout. The request to myjobmag may have exceeded 15 seconds.</div>');
+                        }
+                    });
+
+                    function row(label, value){
+                        return '<tr><td style="padding:5px 12px 5px 0;color:#6b7280;white-space:nowrap;vertical-align:top;">' + label + '</td><td style="padding:5px 0;">' + value + '</td></tr>';
+                    }
+
+                    function escHtml(s){
+                        if (!s) return '';
+                        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                    }
+                });
+            })(jQuery);
+            </script>
         </div>
         <?php
     }
