@@ -21,7 +21,7 @@ class RW_Scraper {
      */
     public static function fetch_jobs( $county_name = '', $count = 50 ) {
         $county_name = sanitize_text_field( $county_name );
-        $cache_key   = 'rw_jobs_' . md5( $county_name . '_' . intval( $count ) );
+        $cache_key   = 'rw_jobs_v2_' . md5( $county_name . '_' . intval( $count ) );
         $cached      = get_transient( $cache_key );
 
         if ( false !== $cached ) {
@@ -172,11 +172,13 @@ class RW_Scraper {
             $date        = self::extract_date( $parent_text );
 
             $jobs[] = array(
-                'title'    => $title,
-                'company'  => $company,
-                'location' => $location ?: 'Kenya',
-                'url'      => $href,
-                'date'     => $date,
+                'title'       => $title,
+                'company'     => $company,
+                'location'    => $location ?: 'Kenya',
+                'url'         => $href,
+                'date'        => $date,
+                'source_name' => 'MyJobMag',
+                'source_url'  => 'https://www.myjobmag.co.ke',
             );
         }
 
@@ -216,7 +218,7 @@ class RW_Scraper {
     public static function clear_cache() {
         global $wpdb;
         $wpdb->query(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_rw_jobs_%' OR option_name LIKE '_transient_timeout_rw_jobs_%'"
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_rw_jobs%' OR option_name LIKE '_transient_timeout_rw_jobs%'"
         );
     }
 }

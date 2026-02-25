@@ -383,12 +383,14 @@
         $list.find(".rw-job-card").remove();
 
         if (jobs.length === 0) {
-            var msg = state.industry
-                ? "No " + state.industry + " jobs found" +
-                  (state.countyName ? " in " + state.countyName : "") +
-                  ". Try a different filter."
-                : "No jobs found. Try a different county.";
-            showEmpty(msg);
+            if (state.industry) {
+                // Industry filter active but no matches — offer to reset to all jobs.
+                var industry  = state.industry;
+                var inCounty  = state.countyName ? " in " + state.countyName : "";
+                showEmpty("No " + industry + " jobs found" + inCounty + ".", true);
+            } else {
+                showEmpty("No jobs found. Try selecting a different county.");
+            }
             $("#rw-pagination").hide();
             updateResultsMeta(state.countyName || "All Kenya", 0);
             return;
@@ -424,6 +426,14 @@
             ? '<span class="rw-job-date">' + escapeHtml(job.date) + "</span>"
             : "";
 
+        var sourceHtml = job.source_name
+            ? '<a class="rw-job-source" href="' + escapeHtml(job.source_url || "#") +
+              '" target="_blank" rel="noopener noreferrer">' +
+              'via ' + escapeHtml(job.source_name) +
+              '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+              "</a>"
+            : "";
+
         return (
             '<div class="rw-job-card">' +
                 '<div class="rw-job-main">' +
@@ -434,6 +444,8 @@
                         "</a>" +
                         '<div class="rw-job-meta">' +
                             companyHtml + locationHtml + dateHtml +
+                            (dateHtml && sourceHtml ? '<span class="rw-job-sep">&middot;</span>' : "") +
+                            sourceHtml +
                         "</div>" +
                     "</div>" +
                     '<a class="rw-apply-btn" href="' + escapeHtml(job.url) +
@@ -539,8 +551,28 @@
         $("#rw-empty").hide();
     }
 
-    function showEmpty(msg) {
+    /**
+     * @param {string}  msg          Message text.
+     * @param {boolean} showResetBtn When true, show a "Show all jobs" button that clears the industry filter.
+     */
+    function showEmpty(msg, showResetBtn) {
         $("#rw-empty-msg").text(msg || "No jobs found.");
+
+        if (showResetBtn) {
+            var locationLabel = state.countyName || "All Kenya";
+            var $btn = $('<button class="rw-btn rw-btn-outline">Show all jobs in ' + escapeHtml(locationLabel) + "</button>");
+            $btn.on("click", function () {
+                state.industry    = "";
+                state.currentPage = 1;
+                $("#rw-industry-select").val("");
+                applyIndustryFilter();
+                renderJobs();
+            });
+            $("#rw-empty-action").empty().append($btn);
+        } else {
+            $("#rw-empty-action").empty();
+        }
+
         $("#rw-empty").show();
         $("#rw-pagination").hide();
     }

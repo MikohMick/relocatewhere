@@ -16,39 +16,15 @@ $donate_link  = get_option( 'rw_donate_link', '' );
      ===================================================================== -->
 <div id="rw-disclaimer-overlay" class="rw-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rw-modal-title" style="display:none;">
     <div class="rw-modal">
-
-        <div class="rw-modal-header">
-            <div class="rw-modal-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            </div>
-            <h3 id="rw-modal-title">Before You Browse</h3>
-            <p class="rw-modal-lead">myjobmap aggregates publicly available job listings from myjobmag.co.ke to help you explore opportunities across Kenya's 47 counties.</p>
-        </div>
-
-        <div class="rw-modal-body">
-            <p><strong>Please be aware:</strong></p>
-            <ul class="rw-modal-list">
-                <li>Listings are sourced from third parties and are <strong>not posted, screened, or verified</strong> by myjobmap.</li>
-                <li>Job details — titles, requirements, salaries, and company information — <strong>may be outdated</strong> or differ from the actual position by the time you view them.</li>
-                <li>We strongly encourage you to <strong>research any employer independently</strong> before submitting an application or sharing personal information.</li>
-                <li>myjobmap is a <strong>discovery tool only</strong>. We have no affiliation with any listed employer and are not involved in the hiring process.</li>
-            </ul>
-            <p class="rw-modal-legal">
-                By continuing, you acknowledge that myjobmap accepts no responsibility for job mismatches, inaccurate listings, or any outcome arising from your job search activity. Always apply your own judgement.
-            </p>
-        </div>
-
-        <div class="rw-modal-footer">
-            <button id="rw-disclaimer-accept" class="rw-btn rw-btn-primary rw-btn-block">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                Got It &mdash; Show Me Jobs
-            </button>
-            <p class="rw-modal-link">
-                Rather go straight to the source?
-                <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer">Visit myjobmag.co.ke &rarr;</a>
-            </p>
-        </div>
-
+        <h3 id="rw-modal-title" class="rw-modal-title">A quick note</h3>
+        <p class="rw-modal-body">
+            myjobmap is a job discovery tool that surfaces listings from public sources across the web.
+            Listings are shown as-is and may not always be current &mdash; verify details directly with the employer before applying.
+            We are not a recruiter and take no responsibility for any listing or application outcome.
+        </p>
+        <button id="rw-disclaimer-accept" class="rw-btn rw-btn-primary rw-btn-block">
+            Got it, show me jobs
+        </button>
     </div>
 </div>
 
@@ -58,7 +34,7 @@ $donate_link  = get_option( 'rw_donate_link', '' );
     <!-- Header -->
     <div class="rw-header">
         <h2 class="rw-title">myjobmap</h2>
-        <p class="rw-subtitle">Browse jobs across Kenya's 47 counties &mdash; powered by <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer">myjobmag.co.ke</a></p>
+        <p class="rw-subtitle">Find jobs across Kenya's 47 counties</p>
     </div>
 
     <!-- Filter Bar -->
@@ -126,10 +102,8 @@ $donate_link  = get_option( 'rw_donate_link', '' );
                 <!-- Empty / error state -->
                 <div id="rw-empty" class="rw-empty" style="display:none;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <p id="rw-empty-msg">No jobs found. Try a different county or industry.</p>
-                    <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer" class="rw-btn rw-btn-outline">
-                        Browse all jobs on myjobmag &rarr;
-                    </a>
+                    <p id="rw-empty-msg">No jobs found.</p>
+                    <div id="rw-empty-action"></div>
                 </div>
 
                 <!-- Jobs rendered by JS -->
@@ -168,10 +142,9 @@ $donate_link  = get_option( 'rw_donate_link', '' );
     <!-- Footer -->
     <div class="rw-footer">
         <div class="rw-footer-links">
-            <span>Job data sourced from</span>
-            <a href="https://www.myjobmag.co.ke" target="_blank" rel="noopener noreferrer">myjobmag.co.ke</a>
-            <span class="rw-footer-sep">&middot;</span>
             <span>Powered by myjobmap</span>
+            <span class="rw-footer-sep">&middot;</span>
+            <span>Listings sourced from public job boards. Always verify with the employer.</span>
         </div>
     </div>
 
