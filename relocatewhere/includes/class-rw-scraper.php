@@ -1,6 +1,6 @@
 <?php
 /**
- * Scraper for myjobmag.co.ke widget feed.
+ * Fetches jobs from the myjobmag.co.ke XML feed.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -9,52 +9,37 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class RW_Scraper {
 
-    const WIDGET_URL     = 'https://www.myjobmag.co.ke/widget/feed.php';
+    const XML_FEED_URL   = 'https://www.myjobmag.co.ke/jobsxml_by_categories.xml';
     const CACHE_DURATION  = 1800; // 30 minutes
 
     /**
-     * Fetch and parse jobs from the myjobmag widget.
+     * Fetch and parse jobs from the myjobmag XML feed.
      *
      * @param string $county_name  County name to filter by, or empty for all Kenya.
-     * @param int    $count        Max number of jobs to request.
+     * @param int    $count        Max number of jobs to return.
      * @return array { jobs: [], location: string, error?: string }
      */
     public static function fetch_jobs( $county_name = '', $count = 50 ) {
         $county_name = sanitize_text_field( $county_name );
-        $cache_key   = 'rw_jobs_v2_' . md5( $county_name . '_' . intval( $count ) );
+        $cache_key   = 'rw_jobs_v3_' . md5( $county_name . '_' . intval( $count ) );
         $cached      = get_transient( $cache_key );
 
         if ( false !== $cached ) {
             return $cached;
         }
 
-        $params = array(
-            'field'            => 0,
-            'industry'         => 0,
-            'keyword'          => $county_name,
-            'count'            => intval( $count ),
-            'title'            => 'Jobs in Kenya',
-            'width'            => 800,
-            'height'           => 6000,
-            'bgcolor'          => 'FFFFFF',
-            'border_color'     => 'CCCCCC',
-            'border_thickness' => 1,
-            'font_type'        => 'Verdana',
-            'title_font_size'  => 14,
-            'title_font_color' => '000000',
-            'font_size'        => 12,
-            'font_color'       => '333333',
-            'link_color'       => '031333',
-            'show_logo'        => 'No',
-            'scroll'           => 'No',
-        );
+        // Pass keyword param — myjobmag may honour it for server-side filtering.
+        $params = array( 'count' => min( intval( $count ) * 4, 200 ) );
+        if ( ! empty( $county_name ) ) {
+            $params['keyword'] = $county_name;
+        }
 
-        $url      = self::WIDGET_URL . '?' . http_build_query( $params );
+        $url      = self::XML_FEED_URL . '?' . http_build_query( $params );
         $response = wp_remote_get( $url, array(
             'timeout' => 15,
             'headers' => array(
                 'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept'          => 'application/xml,text/xml,*/*;q=0.8',
                 'Accept-Language' => 'en-US,en;q=0.9',
                 'Referer'         => home_url( '/' ),
             ),
@@ -77,8 +62,9 @@ class RW_Scraper {
             );
         }
 
-        $html = wp_remote_retrieve_body( $response );
-        $jobs = self::parse_jobs( $html, $county_name );
+        $xml_body = wp_remote_retrieve_body( $response );
+        $jobs     = self::parse_xml_jobs( $xml_body, $county_name );
+        $jobs     = array_slice( $jobs, 0, intval( $count ) );
 
         $result = array(
             'jobs'     => $jobs,
@@ -91,92 +77,78 @@ class RW_Scraper {
     }
 
     /**
-     * Parse job listings from the widget HTML.
+     * Parse jobs from the myjobmag RSS/XML feed body.
      *
-     * @param string $html         Raw HTML from the widget.
-     * @param string $location     Location label to attach to jobs.
+     * @param string $xml_body    Raw XML string.
+     * @param string $county_name Optional county name for local filtering.
      * @return array
      */
-    private static function parse_jobs( $html, $location = '' ) {
-        if ( empty( $html ) ) {
+    private static function parse_xml_jobs( $xml_body, $county_name = '' ) {
+        if ( empty( $xml_body ) ) {
             return array();
         }
 
-        $jobs = array();
+        libxml_use_internal_errors( true );
+        $xml = simplexml_load_string( $xml_body );
+        libxml_clear_errors();
 
-        $dom = new DOMDocument();
-        @$dom->loadHTML( '<?xml encoding="utf-8"?>' . $html, LIBXML_NOERROR | LIBXML_NOWARNING );
-        $xpath = new DOMXPath( $dom );
+        if ( ! $xml || ! isset( $xml->channel->item ) ) {
+            return array();
+        }
 
-        // Strategy 1: links whose href contains "myjobmag".
-        $links = $xpath->query( '//a[contains(@href, "myjobmag")]' );
+        $jobs         = array();
+        $county_lower = strtolower( trim( $county_name ) );
 
-        $skip_texts = array(
-            'home', 'jobs', 'login', 'register', 'about', 'contact',
-            'privacy', 'more jobs', 'view all jobs', 'see all jobs',
-            'post a job', 'find jobs', 'job seekers', 'employers',
-            'career advice', 'cv builder',
-        );
+        foreach ( $xml->channel->item as $item ) {
+            $position  = trim( (string) $item->position );
+            $company   = trim( (string) $item->company );
+            $location  = trim( (string) $item->location );
+            $link      = trim( (string) $item->link );
+            $pub_date  = trim( (string) $item->pubDate );
+            $expiry    = trim( (string) $item->expiryDate );
+            $desc_html = trim( (string) $item->description );
 
-        foreach ( $links as $link ) {
-            $href = trim( $link->getAttribute( 'href' ) );
-            $text = trim( $link->textContent );
-
-            if ( empty( $text ) || empty( $href ) ) {
+            if ( empty( $link ) || empty( $position ) ) {
                 continue;
             }
 
-            // Skip very short or nav-style links.
-            if ( mb_strlen( $text ) < 6 ) {
-                continue;
-            }
-
-            if ( in_array( strtolower( $text ), $skip_texts, true ) ) {
-                continue;
-            }
-
-            // Must look like a job URL (contains /jobs/ or /view_job or /career).
-            if (
-                strpos( $href, '/jobs/' ) === false
-                && strpos( $href, '/view_job' ) === false
-                && strpos( $href, '/career' ) === false
-            ) {
-                // Allow if the text is long enough to be a job title.
-                if ( mb_strlen( $text ) < 15 ) {
+            // Local county filter: if a county was specified, only keep jobs whose
+            // location field contains the county name (case-insensitive).
+            if ( ! empty( $county_lower ) ) {
+                if ( stripos( $location, $county_lower ) === false ) {
                     continue;
                 }
             }
 
-            // Parse "Job Title at Company" or "Job Title – Company" patterns.
-            $title   = $text;
-            $company = '';
+            // Relative posted-date string.
+            $date = ! empty( $pub_date ) ? self::format_date( $pub_date ) : 'Recent';
 
-            $separators = array( ' at ', ' – ', ' - ', ' | ' );
-            foreach ( $separators as $sep ) {
-                if ( strpos( $text, $sep ) !== false ) {
-                    $parts = explode( $sep, $text, 2 );
-                    if ( mb_strlen( trim( $parts[0] ) ) > 3 && mb_strlen( trim( $parts[1] ) ) > 1 ) {
-                        $title   = trim( $parts[0] );
-                        $company = trim( $parts[1] );
-                        break;
-                    }
+            // Expiry as Unix timestamp (0 = no deadline).
+            $expiry_ts = ! empty( $expiry ) ? (int) strtotime( $expiry ) : 0;
+
+            // Plain-text description, capped at 600 chars to keep JSON lean.
+            $description = '';
+            if ( ! empty( $desc_html ) ) {
+                $description = html_entity_decode(
+                    wp_strip_all_tags( $desc_html ),
+                    ENT_QUOTES | ENT_HTML5,
+                    'UTF-8'
+                );
+                $description = preg_replace( '/\s+/', ' ', $description );
+                $description = trim( $description );
+                if ( mb_strlen( $description ) > 600 ) {
+                    $description = mb_substr( $description, 0, 597 ) . '...';
                 }
             }
 
-            $title   = trim( $title, " \t\n\r\0\x0B-–|" );
-            $company = trim( $company, " \t\n\r\0\x0B-–|" );
-
-            // Get date from surrounding text.
-            $parent      = $link->parentNode;
-            $parent_text = $parent ? trim( $parent->textContent ) : '';
-            $date        = self::extract_date( $parent_text );
-
             $jobs[] = array(
-                'title'       => $title,
+                'title'       => $position,
                 'company'     => $company,
-                'location'    => $location ?: 'Kenya',
-                'url'         => $href,
+                'location'    => $location ?: ( $county_name ?: 'Kenya' ),
+                'url'         => $link,
                 'date'        => $date,
+                'expiry_ts'   => $expiry_ts,
+                'description' => $description,
                 'source_name' => 'MyJobMag',
                 'source_url'  => 'https://www.myjobmag.co.ke',
             );
@@ -197,19 +169,24 @@ class RW_Scraper {
     }
 
     /**
-     * Try to extract a relative date string from text.
+     * Convert an RFC-2822 date string into a human-readable relative label.
      *
-     * @param string $text
+     * @param string $date_str
      * @return string
      */
-    private static function extract_date( $text ) {
-        if ( preg_match( '/(\d+)\s*(day|hour|week|month)s?\s*ago/i', $text, $m ) ) {
-            return $m[0];
+    private static function format_date( $date_str ) {
+        $ts = strtotime( $date_str );
+        if ( ! $ts ) {
+            return 'Recent';
         }
-        if ( preg_match( '/\d{1,2}\s+\w+\s+\d{4}/', $text, $m ) ) {
-            return $m[0];
-        }
-        return 'Recent';
+
+        $diff_days = (int) floor( ( time() - $ts ) / DAY_IN_SECONDS );
+
+        if ( $diff_days < 1 )  return 'Today';
+        if ( $diff_days === 1 ) return '1 day ago';
+        if ( $diff_days < 7 )  return $diff_days . ' days ago';
+        if ( $diff_days < 14 ) return '1 week ago';
+        return date( 'M j, Y', $ts );
     }
 
     /**

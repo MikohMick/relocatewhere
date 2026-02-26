@@ -11,8 +11,9 @@
         countyKey:      "",
         countyName:     "",
         industry:       "",
+        deadlineFilter: "",
         allJobs:        [],    // all jobs from last fetch
-        filteredJobs:   [],    // after client-side industry filter
+        filteredJobs:   [],    // after client-side filters
         currentPage:    1,
         perPage:        10,
         map:            null,
@@ -43,9 +44,11 @@
         initMap();
         initCountySearch();
         initIndustryFilter();
+        initDeadlineFilter();
         initSearchBtn();
         initClearBtn();
         initDisclaimer();
+        initReadMore();
     });
 
     // ========================================================================
@@ -57,15 +60,12 @@
         try {
             accepted = localStorage.getItem(DISCLAIMER_KEY) === "1";
         } catch (e) {
-            // localStorage blocked (private browsing, etc.) — treat as accepted.
             accepted = true;
         }
 
         if (accepted) {
-            // Already seen before — go straight to loading jobs.
             loadJobs(false);
         } else {
-            // Show modal, block until user accepts.
             $("#rw-disclaimer-overlay").fadeIn(200);
 
             $("#rw-disclaimer-accept").on("click", function () {
@@ -74,7 +74,6 @@
                 } catch (e) {}
 
                 $("#rw-disclaimer-overlay").fadeOut(180, function () {
-                    // Kick off initial load after modal closes.
                     loadJobs(false);
                 });
             });
@@ -132,7 +131,7 @@
     }
 
     // ========================================================================
-    // County Search (client-side, no AJAX needed)
+    // County Search
     // ========================================================================
 
     function initCountySearch() {
@@ -224,24 +223,62 @@
         $("#rw-industry-select").on("change", function () {
             state.industry    = $(this).val();
             state.currentPage = 1;
-            applyIndustryFilter();
+            applyFilters();
             renderJobs();
         });
     }
 
-    function applyIndustryFilter() {
-        if (!state.industry) {
-            state.filteredJobs = state.allJobs.slice();
-            return;
-        }
-        var keywords = industries[state.industry] || [state.industry.toLowerCase()];
-        state.filteredJobs = state.allJobs.filter(function (job) {
-            var haystack = (job.title + " " + job.company).toLowerCase();
-            for (var i = 0; i < keywords.length; i++) {
-                if (haystack.indexOf(keywords[i]) !== -1) return true;
-            }
-            return false;
+    // ========================================================================
+    // Deadline Filter (client-side)
+    // ========================================================================
+
+    function initDeadlineFilter() {
+        $("#rw-deadline-select").on("change", function () {
+            state.deadlineFilter = $(this).val();
+            state.currentPage    = 1;
+            applyFilters();
+            renderJobs();
         });
+    }
+
+    // ========================================================================
+    // Combined client-side filters (industry + deadline)
+    // ========================================================================
+
+    function applyFilters() {
+        var jobs = state.allJobs.slice();
+
+        // Industry keyword match
+        if (state.industry) {
+            var keywords = industries[state.industry] || [state.industry.toLowerCase()];
+            jobs = jobs.filter(function (job) {
+                var haystack = (job.title + " " + job.company).toLowerCase();
+                for (var i = 0; i < keywords.length; i++) {
+                    if (haystack.indexOf(keywords[i]) !== -1) return true;
+                }
+                return false;
+            });
+        }
+
+        // Deadline filter
+        if (state.deadlineFilter) {
+            var nowSec = Math.floor(Date.now() / 1000);
+            jobs = jobs.filter(function (job) {
+                var ts = job.expiry_ts || 0;
+                if (state.deadlineFilter === "open") {
+                    // No expiry set OR expiry is in the future
+                    return !ts || ts > nowSec;
+                }
+                if (state.deadlineFilter === "week") {
+                    if (!ts) return false;
+                    var daysLeft = (ts - nowSec) / 86400;
+                    return daysLeft > 0 && daysLeft <= 7;
+                }
+                return true;
+            });
+        }
+
+        state.filteredJobs = jobs;
     }
 
     // ========================================================================
@@ -250,18 +287,20 @@
 
     function initSearchBtn() {
         $("#rw-search-btn").on("click", function () {
-            loadJobs(true); // true = scroll to results after load
+            loadJobs(true);
         });
     }
 
     function initClearBtn() {
         $("#rw-clear-btn").on("click", function () {
-            state.countyKey  = "";
-            state.countyName = "";
-            state.industry   = "";
+            state.countyKey      = "";
+            state.countyName     = "";
+            state.industry       = "";
+            state.deadlineFilter = "";
             $("#rw-county-input").val("");
             $("#rw-county-key").val("");
             $("#rw-industry-select").val("");
+            $("#rw-deadline-select").val("");
             $("#rw-clear-btn").hide();
             highlightMarker(null);
             loadJobs(false);
@@ -274,7 +313,7 @@
         $("#rw-county-input").val(name + " County");
         $("#rw-county-key").val(key);
         highlightMarker(key);
-        loadJobs(true); // scroll to results when county clicked on map
+        loadJobs(true);
     }
 
     // ========================================================================
@@ -300,9 +339,6 @@
     // Load Jobs (AJAX)
     // ========================================================================
 
-    /**
-     * @param {boolean} scrollToResults  Whether to smooth-scroll to the list after load.
-     */
     function loadJobs(scrollToResults) {
         if (state.isSearching) return;
         state.isSearching = true;
@@ -311,7 +347,7 @@
         showLoading(true);
         hideEmpty();
 
-        var hasFilter = state.countyKey || state.industry;
+        var hasFilter = state.countyKey || state.industry || state.deadlineFilter;
         if (hasFilter) {
             $("#rw-clear-btn").show();
         }
@@ -332,7 +368,7 @@
                 if (response.success) {
                     state.allJobs     = response.data.jobs || [];
                     state.currentPage = 1;
-                    applyIndustryFilter();
+                    applyFilters();
                     updateResultsMeta(response.data.location, state.filteredJobs.length);
                     renderJobs();
 
@@ -383,11 +419,9 @@
         $list.find(".rw-job-card").remove();
 
         if (jobs.length === 0) {
-            if (state.industry) {
-                // Industry filter active but no matches — offer to reset to all jobs.
-                var industry  = state.industry;
-                var inCounty  = state.countyName ? " in " + state.countyName : "";
-                showEmpty("No " + industry + " jobs found" + inCounty + ".", true);
+            if (state.industry || state.deadlineFilter) {
+                var locationLabel = state.countyName || "All Kenya";
+                showEmpty("No jobs match the selected filters.", true);
             } else {
                 showEmpty("No jobs found. Try selecting a different county.");
             }
@@ -407,6 +441,36 @@
         });
 
         renderPagination(totalPages, jobs.length);
+    }
+
+    // ========================================================================
+    // Job Card Builder
+    // ========================================================================
+
+    function buildDeadlineBadge(expiryTs) {
+        if (!expiryTs) return "";
+
+        var nowSec   = Math.floor(Date.now() / 1000);
+        var daysLeft = Math.ceil((expiryTs - nowSec) / 86400);
+        var dateStr  = formatBadgeDate(expiryTs);
+
+        if (daysLeft <= 0) {
+            return '<span class="rw-deadline-badge rw-badge-red">Deadline passed &middot; ' + dateStr + "</span>";
+        }
+        if (daysLeft <= 3) {
+            var label = daysLeft === 1 ? "1 day left" : daysLeft + " days left";
+            return '<span class="rw-deadline-badge rw-badge-red">Closes ' + dateStr + ' &middot; ' + label + "</span>";
+        }
+        if (daysLeft <= 7) {
+            return '<span class="rw-deadline-badge rw-badge-orange">Closing soon &middot; ' + dateStr + "</span>";
+        }
+        return '<span class="rw-deadline-badge rw-badge-green">Closes ' + dateStr + "</span>";
+    }
+
+    function formatBadgeDate(ts) {
+        var d      = new Date(ts * 1000);
+        var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        return months[d.getMonth()] + " " + d.getDate();
     }
 
     function buildJobCard(job) {
@@ -434,6 +498,47 @@
               "</a>"
             : "";
 
+        var deadlineBadge = buildDeadlineBadge(job.expiry_ts || 0);
+
+        // Description expand section (only if description text is available)
+        var descHtml = "";
+        if (job.description) {
+            var snippetLen  = 280;
+            var snippet     = job.description.length > snippetLen
+                ? job.description.slice(0, snippetLen)
+                : job.description;
+            var blurText    = job.description.length > snippetLen
+                ? job.description.slice(snippetLen, snippetLen + 180)
+                : "";
+
+            var blurSection = blurText
+                ? '<div class="rw-job-desc-blur">' +
+                  '<p>' + escapeHtml(blurText) + "</p>" +
+                  '<div class="rw-job-desc-overlay">' +
+                  '<a class="rw-btn rw-btn-outline rw-btn-sm" href="' + escapeHtml(job.url) +
+                  '" target="_blank" rel="noopener noreferrer">Check original job posting &rarr;</a>' +
+                  '</div>' +
+                  '</div>'
+                : '<div class="rw-job-desc-cta">' +
+                  '<a class="rw-btn rw-btn-outline rw-btn-sm" href="' + escapeHtml(job.url) +
+                  '" target="_blank" rel="noopener noreferrer">View original job posting &rarr;</a>' +
+                  '</div>';
+
+            descHtml =
+                '<div class="rw-job-desc-body" style="display:none;">' +
+                    '<div class="rw-job-desc-inner">' +
+                        '<p class="rw-job-desc-snippet">' + escapeHtml(snippet) + '</p>' +
+                        blurSection +
+                    '</div>' +
+                '</div>' +
+                '<div class="rw-job-readmore-row">' +
+                    '<button class="rw-read-more-btn" type="button">' +
+                        'Read more ' +
+                        '<svg class="rw-readmore-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
+                    '</button>' +
+                '</div>';
+        }
+
         return (
             '<div class="rw-job-card">' +
                 '<div class="rw-job-main">' +
@@ -446,6 +551,7 @@
                             companyHtml + locationHtml + dateHtml +
                             (dateHtml && sourceHtml ? '<span class="rw-job-sep">&middot;</span>' : "") +
                             sourceHtml +
+                            (deadlineBadge ? '<span class="rw-job-sep">&middot;</span>' + deadlineBadge : "") +
                         "</div>" +
                     "</div>" +
                     '<a class="rw-apply-btn" href="' + escapeHtml(job.url) +
@@ -454,8 +560,36 @@
                         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>' +
                     "</a>" +
                 "</div>" +
+                descHtml +
             "</div>"
         );
+    }
+
+    // ========================================================================
+    // Read More toggle (event-delegated, works on dynamically rendered cards)
+    // ========================================================================
+
+    function initReadMore() {
+        $(document).on("click", ".rw-read-more-btn", function () {
+            var $btn  = $(this);
+            var $card = $btn.closest(".rw-job-card");
+            var $body = $card.find(".rw-job-desc-body");
+            var open  = $card.hasClass("rw-desc-open");
+
+            if (open) {
+                $card.removeClass("rw-desc-open");
+                $body.slideUp(180);
+                $btn.html(
+                    'Read more <svg class="rw-readmore-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
+                );
+            } else {
+                $card.addClass("rw-desc-open");
+                $body.slideDown(200);
+                $btn.html(
+                    'Show less <svg class="rw-readmore-chevron rw-chevron-up" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>'
+                );
+            }
+        });
     }
 
     // ========================================================================
@@ -470,9 +604,9 @@
             return;
         }
 
-        var html    = "";
-        var start   = Math.max(1, state.currentPage - 2);
-        var end     = Math.min(totalPages, state.currentPage + 2);
+        var html  = "";
+        var start = Math.max(1, state.currentPage - 2);
+        var end   = Math.min(totalPages, state.currentPage + 2);
 
         html += '<button class="rw-page-btn rw-page-prev"' +
                 (state.currentPage <= 1 ? " disabled" : "") + ">&laquo; Prev</button>";
@@ -551,10 +685,6 @@
         $("#rw-empty").hide();
     }
 
-    /**
-     * @param {string}  msg          Message text.
-     * @param {boolean} showResetBtn When true, show a "Show all jobs" button that clears the industry filter.
-     */
     function showEmpty(msg, showResetBtn) {
         $("#rw-empty-msg").text(msg || "No jobs found.");
 
@@ -562,10 +692,12 @@
             var locationLabel = state.countyName || "All Kenya";
             var $btn = $('<button class="rw-btn rw-btn-outline">Show all jobs in ' + escapeHtml(locationLabel) + "</button>");
             $btn.on("click", function () {
-                state.industry    = "";
-                state.currentPage = 1;
+                state.industry       = "";
+                state.deadlineFilter = "";
+                state.currentPage    = 1;
                 $("#rw-industry-select").val("");
-                applyIndustryFilter();
+                $("#rw-deadline-select").val("");
+                applyFilters();
                 renderJobs();
             });
             $("#rw-empty-action").empty().append($btn);

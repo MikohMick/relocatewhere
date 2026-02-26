@@ -73,6 +73,15 @@ $donate_link  = get_option( 'rw_donate_link', '' );
             </select>
         </div>
 
+        <div class="rw-filter-group">
+            <label class="rw-filter-label" for="rw-deadline-select">Deadline</label>
+            <select id="rw-deadline-select" class="rw-select">
+                <option value="">Any deadline</option>
+                <option value="open">Still open</option>
+                <option value="week">Closing this week</option>
+            </select>
+        </div>
+
         <div class="rw-filter-actions">
             <button id="rw-search-btn" class="rw-btn rw-btn-primary">
                 <svg id="rw-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
